@@ -1,0 +1,13 @@
+#!/bin/bash
+
+load_lib() {
+  local lib_name="$1"
+  local lib_path="$(dirname ${BASH_SOURCE})/$lib_name"
+
+  if [[ -f "$lib_path" ]]; then
+    source "$lib_path"
+  else
+    echo "Error: No se pudo cargar la librería '$lib_name' de '$lib_path'." >&2
+    exit 1
+  fi
+}

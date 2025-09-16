@@ -1,0 +1,50 @@
+#!/bin/bash
+
+args_as_str() {
+  local args_str=""
+  for arg in "$@"; do
+    if [[ "$arg" =~ [\ \"] ]]; then
+      arg="${arg//\"/\\\"}"   # Escapar comillas dobles
+      args_str+="\"$arg\" "
+    else
+      args_str+="$arg "
+    fi
+  done
+
+  # Eliminar el último espacio adicional
+  args_str="${args_str::-1}"
+
+  # Imprimir o devolver la cadena concatenada
+  echo "$args_str"
+}
+
+args_as_str_escaped_single() {
+  local args_str=""
+  for arg in "$@"; do
+    # Escapamos las comillas simples
+    arg="${arg//\'/\'\\\'\'}"
+    args_str+="'$arg' "
+  done
+
+  # Eliminar el último espacio adicional
+  args_str="${args_str::-1}"
+
+  # Imprimir la cadena concatenada
+  echo "$args_str"
+}
+
+# Función para convertir los argumentos en una cadena concatenada escapando comillas dobles
+args_as_str_escaped_double() {
+  local args_str=""
+  for arg in "$@"; do
+    # Escapamos las comillas dobles
+    arg="${arg//\"/\\\"}"
+    args_str+="\"$arg\" "
+  done
+
+  # Eliminar el último espacio adicional
+  args_str="${args_str::-1}"
+
+  # Imprimir la cadena concatenada
+  echo "$args_str"
+}

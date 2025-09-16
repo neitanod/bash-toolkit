@@ -1,0 +1,84 @@
+#!/bin/bash
+RUNNING_DIR="$(pwd -P)"
+
+# Use BASH_SOURCE for sourced, or $0 for normal execution
+SOURCE_FILE="${BASH_SOURCE[0]}"
+RUNNER_SCRIPT_DIR="$(cd "$(dirname "${SOURCE_FILE}")" && pwd -P)"
+
+# Resolve symlinks to get the actual script path
+ACTUAL_SOURCE_FILE="${BASH_SOURCE[0]}"
+while [ -h "$ACTUAL_SOURCE_FILE" ]; do
+  # Get the directory of the current symlink
+  SYMLINK_DIR="$(cd -P "$(dirname "$ACTUAL_SOURCE_FILE")" && pwd)"
+  # Resolve the symlink (readlink returns relative or absolute path)
+  ACTUAL_SOURCE_FILE="$(readlink "$ACTUAL_SOURCE_FILE")"
+  # If readlink returns a relative path, convert it to absolute
+  case "$ACTUAL_SOURCE_FILE" in
+    /*) ;; # Already absolute, do nothing
+    *) ACTUAL_SOURCE_FILE="$SYMLINK_DIR/$ACTUAL_SOURCE_FILE" ;; # Convert to absolute
+  esac
+done
+ACTUAL_RUNNER_SCRIPT_DIR="$(cd -P "$(dirname "$ACTUAL_SOURCE_FILE")" && pwd)"
+
+# Define Scripts dir as the directory containing the symlink
+SCRIPTS_DIR="$RUNNER_SCRIPT_DIR"
+
+cd "$RUNNER_SCRIPT_DIR"
+
+SUBCALL_FOR=()
+TOOLKIT_PREFIX="my-"
+
+# source "${ACTUAL_RUNNER_SCRIPT_DIR}/../config"
+source "${SCRIPTS_DIR}/config"
+
+# echo "Runner script: " $SOURCE_FILE
+# echo "Runner script dir: " $RUNNER_SCRIPT_DIR
+# echo "Actual runner script: " $ACTUAL_SOURCE_FILE
+# echo "Actual runner script dir: " $ACTUAL_RUNNER_SCRIPT_DIR
+# echo "Scripts dir: " $SCRIPTS_DIR
+# echo "Prefix: " $TOOLKIT_PREFIX
+#
+# exit 0
+
+
+# New array to store arguments without ---edit
+args=()
+
+# Loop to detect ---edit and ---help and remove them from the arguments
+for arg in "$@"; do
+  if [[ "$arg" == "---edit" ]]; then
+    vim "./${TOOLKIT_PREFIX}${args[0]}"
+    exit 0
+  elif [[ "$arg" == "---help" ]]; then
+    if [[ -z ${args[0]} ]]; then
+      vim ./help.asciidoc
+    else
+      cmd=${args[0]}
+      sed -n "/== ${cmd}:/,/== /{ /== /d; p }" help.asciidoc
+      exit 0
+    fi
+  else
+    args+=("$arg")
+  fi
+done
+
+# Extract the subcommand (first argument after removing ---edit)
+subcommand="${args[0]}"
+
+file="./${TOOLKIT_PREFIX}${args[0]}"
+
+# Verifies that file exists
+if [[ -f "$file" ]]; then
+
+    # Continue with normal execution
+    if [[ " ${SUBCALL_FOR[*]} " == *" $subcommand "* ]]; then
+      cd "${RUNNING_DIR}"
+      "$RUNNER_SCRIPT_DIR"/${TOOLKIT_PREFIX}"${args[@]}"
+    else
+      cd "${RUNNING_DIR}"
+      source "$RUNNER_SCRIPT_DIR"/${TOOLKIT_PREFIX}"${args[@]}"
+    fi
+else
+  echo "Error: Script '$file' not found." >&2
+  exit 1
+fi

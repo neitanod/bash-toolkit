@@ -1,0 +1,91 @@
+#!/bin/bash
+
+# Variable global para almacenar el nombre del archivo de log
+LOG_FILE=""
+
+# Función para inicializar el log con fecha y hora
+init_log_with() {
+    local filename="$1"
+
+    if [[ -z "$filename" ]]; then
+        # Si no se proporciona un nombre de archivo, usar el nombre del script
+        filename="$(basename "$0")"
+    fi
+
+    # Si el nombre de archivo contiene '/', se asume que es una ruta y se usa tal cual
+    if [[ "$filename" == *"/"* ]]; then
+        LOG_FILE="$filename"
+    else
+        # Agregar timestamp con fecha y hora
+        local timestamp
+        timestamp="$(date '+%Y-%m-%d_%H:%M:%S')"
+        LOG_FILE="${filename}.${timestamp}.log"
+    fi
+}
+
+# Función para inicializar el log con fecha y hora
+init_log() {
+    if [[ -z "$LOG_FILE" ]]; then
+      local filename="$1"
+
+      if [[ -z "$filename" ]]; then
+          # Si no se proporciona un nombre de archivo, usar el nombre del script .log
+          filename="$(basename "$0").log"
+      fi
+
+      LOG_FILE="$filename"
+    fi
+}
+
+log_file() {
+    init_log
+    echo "$LOG_FILE"
+}
+
+init_log_datetime() {
+    init_log "$1"
+    # Agregar timestamp con fecha y hora
+    local timestamp
+    timestamp="$(date '+%Y-%m-%d_%H:%M:%S')"
+    LOG_FILE="$LOG_FILE.${timestamp}.log"
+}
+
+# Función para inicializar el log solo con la fecha (sin hora)
+init_log_date() {
+    init_log "$1"
+    # Agregar timestamp con fecha y hora
+    local timestamp
+    timestamp="$(date '+%Y-%m-%d')"
+    LOG_FILE="$LOG_FILE.${timestamp}.log"
+}
+
+# Función para escribir mensajes en el archivo de log
+log() {
+    init_log
+    # Escribir el mensaje en el archivo de log
+    echo "$@" >> "$LOG_FILE"
+}
+
+# Función para escribir mensajes en el archivo de log
+log_time() {
+    # Escribir el mensaje en el archivo de log
+    local timestamp
+    timestamp="$(date '+%Y-%m-%d_%H:%M:%S %:z')"
+    log "$timestamp:" "$@"
+}
+
+log_cat_echo() {
+    init_log
+    # Escribir lo que recibe de stdin en el archivo de log y en la consola
+    tee -a "$LOG_FILE"
+}
+
+log_echo() {
+  log "$@"
+  echo "$@"
+}
+
+log_time_echo() {
+  log_time "$@"
+  echo "$@"
+}

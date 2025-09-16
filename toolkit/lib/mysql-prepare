@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Load configuration
+cd `ee checkouts-folder`/bsdevel.local
+
+MYSQL_USER=`configure -k=db.bsdevel.user bsdevel.json`
+MYSQL_PASSWORD=`configure -k=db.bsdevel.pass bsdevel.json`
+MYSQL_HOST=`configure -k=db.bsdevel.host bsdevel.json`
+MYSQL_PORT=`configure -k=db.bsdevel.port bsdevel.json`
+
+db=${db:-bsdevel}       # Default to 'bsdevel' if no DB is provided
+
+# Check if database exists
+if ! mysql -h $MYSQL_HOST -P $MYSQL_PORT -u $MYSQL_USER -p$MYSQL_PASSWORD -e "USE $db"; then
+  echo "Database $db does not exist"
+  exit 1
+fi

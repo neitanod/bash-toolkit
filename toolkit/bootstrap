@@ -1,0 +1,171 @@
+#!/bin/bash
+_slg_is_sourced() {
+  # Comprueba si el script está siendo ejecutado en el contexto de la shell actual (sourced)
+	# o si está siendo ejecutado en una subshell (indirectamente a través de una subllamada)
+	[[ "${BASH_SOURCE[0]}" != "${0}" ]]
+}
+
+if ! _slg_is_sourced; then
+	cd "$(dirname "$0")"
+	source ./lib/colors.sh
+	cat <<EOF
+${RED}ERROR:${NORMAL}
+${0}
+${RED}must be sourced, not just run.${NORMAL}
+
+    ./_autocomplete          ${RED}Wrong!${NORMAL}
+
+    source ./_autocomplete   ${GREEN}Correct${NORMAL}
+
+    . ./_autocomplete        ${GREEN}Correct${NORMAL}
+EOF
+	exit 1
+fi
+
+curdir=$(pwd)
+cd "$(dirname "$0")"
+ENV_VAR_NAME_SCRIPTS="MY_SCRIPTS"
+
+SCRIPTS_DIR="$(dirname $(pwd))"
+
+TOOLKIT_ENTRY_POINT=""
+TOOLKIT_ENTRY_POINT_2=""
+
+source "../config"  # This can override ENV_VAR_NAME_SCRIPTS
+
+SETVAR="export ${ENV_VAR_NAME_SCRIPTS}="${SCRIPTS_DIR}""; eval $SETVAR
+SETVAR="export _${TOOLKIT_UNIQUE_SLUG}__SCRIPTS_DIR=\"${SCRIPTS_DIR}\""; eval $SETVAR
+SETVAR="export _${TOOLKIT_UNIQUE_SLUG}__TOOLKIT_PREFIX=\"${TOOLKIT_PREFIX}\""; eval $SETVAR
+
+cd $curdir
+
+_slg_count_positional_args() {
+  local count=0
+  for arg in "${COMP_WORDS[@]:1}"; do
+    if [[ ! "$arg" =~ ^- ]]; then
+      ((count++))
+    fi
+  done
+  ((count--))
+  echo "$count"
+}
+
+_slg_process_options() {
+    local cur="${COMP_WORDS[COMP_CWORD]}"  # Lo que está escribiendo el usuario
+    local opts
+    local matches=()
+
+    # Capturar el output de tu script que devuelve las opciones
+    opts=$("$1")  # Llamamos al comando (pasado como argumento)
+
+    # Procesar cada línea de las opciones
+    for line in $opts; do
+        local key="${line%%[[:space:]]*}"  # Extraer la opción (la primera palabra antes del espacio/tab)
+        local desc="${line#*$key}"         # Extraer la descripción (todo lo que sigue después de la opción)
+
+        # Filtrar las opciones que coinciden con lo que el usuario ha escrito
+        if [[ "$key" == "$cur"* ]]; then
+            matches+=("${key}$'\t${desc}")  # Formato con tabulación
+        fi
+    done
+
+    # Usar compgen para generar las opciones de autocompletado
+    compgen -W "${matches[*]}" -- "$cur"
+}
+
+_slg_autocomplete_actual() {
+  echo "===" >> /tmp/slg_autocomplete.log
+  echo "$@" >> /tmp/slg_autocomplete.log
+
+	SETVAR="SCRIPTS_DIR=\${_${SLUG}__SCRIPTS_DIR}"; eval "$SETVAR"
+  SETVAR="TOOLKIT_PREFIX=\${_${SLUG}__TOOLKIT_PREFIX}"; eval "$SETVAR"
+ 
+
+	local cur prev opts
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD - 1]}"
+
+	opts=$(ls $SCRIPTS_DIR | grep '^'$TOOLKIT_PREFIX | sed 's/^'$TOOLKIT_PREFIX'//')
+
+	if [[ ${COMP_CWORD} -eq 1 ]]; then
+		# First argument: complete with command options
+		COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
+		return 0
+	fi
+
+	local cmd="${COMP_WORDS[1]}"
+	local position="${COMP_CWORD}"
+
+  echo "cur: $cur" >> /tmp/slg_autocomplete.log
+  echo "prev: $prev" >> /tmp/slg_autocomplete.log
+  echo "cmd: $cmd" >> /tmp/slg_autocomplete.log
+  #echo "postion: $position" >> /tmp/slg_autocomplete.log
+  echo "COMP_WORDS: ${CMP_WORDS}" >> /tmp/slg_autocomplete.log
+  #echo "Count positional args: $(_slg_count_positional_args)" >> /tmp/slg_autocomplete.log
+
+  if [[ "$cur" == -* && "$cur" != *=* ]]; then
+    # Si existe un archivo $cmd_flags lo ejecuta para obtener una lista de available flags
+    if [[ -f "${SCRIPTS_DIR}/autocomplete/${cmd}_flags" ]]; then
+      echo "${cmd}_flags" >> /tmp/slg_autocomplete.log
+      "${SCRIPTS_DIR}/autocomplete/${cmd}_flags" "${COMP_WORDS[@]:1}"
+    fi
+  elif [[ "$cur" =~ ^-([a-zA-Z0-9_-]+)= ]]; then
+    flag="${cur#-}"  # Elimina el prefijo -
+    flag="${flag#-}"  # Elimina el prefijo -- (el segundo -)
+    flag="${flag%=}"  # Elimina el sufijo =
+    # busca el script para autocompletar este comando, por ejemplo si estamos completando
+    # command '--configuration'=<tab>, busca command_configuration que tiene que devolver los valores que
+    # puede recibir
+    if [[ -f "${SCRIPTS_DIR}/autocomplete/${cmd}_${flag}" ]]; then
+      echo "${SCRIPTS_DIR}/autocomplete/${cmd}_${flag}" "${COMP_WORDS[@]:1}" >> /tmp/slg_autocomplete.log
+      "${SCRIPTS_DIR}/autocomplete/${cmd}_${flag}" "${COMP_WORDS[@]:1}" | while IFS= read -r line; do
+        echo "${cur}$line"
+      done
+    fi
+  else
+    local base_position=$(_slg_count_positional_args)
+    if [[ -f "${SCRIPTS_DIR}/autocomplete/${cmd}_${base_position}" ]]; then
+      "${SCRIPTS_DIR}/autocomplete/${cmd}_${base_position}" "${COMP_WORDS[@]:1}"
+    elif [[ -f "${SCRIPTS_DIR}/autocomplete/${cmd}" ]]; then
+      "${SCRIPTS_DIR}/autocomplete/${cmd}" "${COMP_WORDS[@]:1}"
+    else
+      # if [[ "${cur}" = "" ]]; then
+      #   ls
+      # else
+      #   ls "${cur}" | while IFS= read -r line; do
+      #     echo "${cur}$line"
+      #   done
+      # fi
+      ls -d1 ${cur}* 2> /dev/null
+    fi
+	fi
+}
+
+FUNCTION="
+_${TOOLKIT_UNIQUE_SLUG}_autocomplete() {
+  SLUG="$TOOLKIT_UNIQUE_SLUG"
+  _slg_autocomplete_actual "\$@"
+}"
+
+eval $FUNCTION
+
+# Register the slg_autocomplete function for commands
+if [ ! -z "$TOOLKIT_ENTRY_POINT" ]; then
+  complete -F _${TOOLKIT_UNIQUE_SLUG}_autocomplete ${TOOLKIT_ENTRY_POINT}
+fi
+
+if [ ! -z "$TOOLKIT_ENTRY_POINT_2" ]; then
+  complete -F _${TOOLKIT_UNIQUE_SLUG}_autocomplete ${TOOLKIT_ENTRY_POINT_2}
+fi
+
+export PATH=$PATH:$SCRIPTS_DIR
+
+# Ensure the slg_autocomplete function is loaded for zsh
+# if [ -n "$ZSH_VERSION" ]; then
+#   autoload -Uz compinit
+#   compinit
+#   compdef _slg_autocomplete slg
+#   compdef _slg_autocomplete s
+#   echo "slg autocomplete loaded"
+# fi
