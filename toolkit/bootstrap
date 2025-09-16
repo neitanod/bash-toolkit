@@ -23,15 +23,17 @@ EOF
 fi
 
 curdir=$(pwd)
-cd "$(dirname "$0")"
+cd "$(dirname "$1")"
 ENV_VAR_NAME_SCRIPTS="MY_SCRIPTS"
 
-SCRIPTS_DIR="$(dirname $(pwd))"
+#SCRIPTS_DIR="$(dirname $(pwd))"
+SCRIPTS_DIR="$(pwd)"
 
 TOOLKIT_ENTRY_POINT=""
 TOOLKIT_ENTRY_POINT_2=""
 
-source "../config"  # This can override ENV_VAR_NAME_SCRIPTS
+#source "../config"  # This can override ENV_VAR_NAME_SCRIPTS
+source $1
 
 SETVAR="export ${ENV_VAR_NAME_SCRIPTS}="${SCRIPTS_DIR}""; eval $SETVAR
 SETVAR="export _${TOOLKIT_UNIQUE_SLUG}__SCRIPTS_DIR=\"${SCRIPTS_DIR}\""; eval $SETVAR
