@@ -49,6 +49,9 @@ for arg in "$@"; do
   if [[ "$arg" == "---edit" ]]; then
     vim "./${TOOLKIT_PREFIX}${args[0]}"
     exit 0
+  elif [[ "$arg" == "---cat" ]]; then
+    cat "./${TOOLKIT_PREFIX}${args[0]}"
+    exit 0
   elif [[ "$arg" == "---help" ]]; then
     if [[ -z ${args[0]} ]]; then
       vim ./help.asciidoc
