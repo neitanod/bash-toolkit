@@ -23,6 +23,9 @@ EOF
 fi
 
 curdir=$(pwd)
+cd "$(dirname "$0")"
+TOOLKIT_DIR="$(pwd)"
+
 cd "$(dirname "$1")"
 ENV_VAR_NAME_SCRIPTS="MY_SCRIPTS"
 
@@ -154,11 +157,24 @@ eval $FUNCTION
 
 # Register the slg_autocomplete function for commands
 if [ ! -z "$TOOLKIT_ENTRY_POINT" ]; then
+  if [ ! -e "$SCRIPTS_DIR/$TOOLKIT_ENTRY_POINT" ]; then
+    echo ln -s "$TOOLKIT_DIR/entrypoint" "$SCRIPTS_DIR/$TOOLKIT_ENTRY_POINT"
+    ln -s "$TOOLKIT_DIR/entrypoint" "$SCRIPTS_DIR/$TOOLKIT_ENTRY_POINT"
+  fi
   complete -F _${TOOLKIT_UNIQUE_SLUG}_autocomplete ${TOOLKIT_ENTRY_POINT}
 fi
 
 if [ ! -z "$TOOLKIT_ENTRY_POINT_2" ]; then
+  if [ ! -e "$SCRIPTS_DIR/$TOOLKIT_ENTRY_POINT_2" ]; then
+    echo ln -s "$TOOLKIT_DIR/entrypoint" "$SCRIPTS_DIR/$TOOLKIT_ENTRY_POINT_2"
+    ln -s "$TOOLKIT_DIR/entrypoint" "$SCRIPTS_DIR/$TOOLKIT_ENTRY_POINT_2"
+  fi
   complete -F _${TOOLKIT_UNIQUE_SLUG}_autocomplete ${TOOLKIT_ENTRY_POINT_2}
+fi
+
+if [ ! -e "$SCRIPTS_DIR/toolkit" ]; then
+  echo ln -s "$TOOLKIT_DIR" "$SCRIPTS_DIR/toolkit"
+  ln -s "$TOOLKIT_DIR" "$SCRIPTS_DIR/toolkit"
 fi
 
 export PATH=$PATH:$SCRIPTS_DIR
