@@ -179,11 +179,31 @@ fi
 
 export PATH=$PATH:$SCRIPTS_DIR
 
-# Ensure the slg_autocomplete function is loaded for zsh
-# if [ -n "$ZSH_VERSION" ]; then
-#   autoload -Uz compinit
-#   compinit
-#   compdef _slg_autocomplete slg
-#   compdef _slg_autocomplete s
-#   echo "slg autocomplete loaded"
-# fi
+# Ensure the autocomplete function is loaded in  bash / zsh / fish / etc:
+#
+#   # slg-toolkit
+#   source ~/bash-toolkit/toolkit/bootstrap ~/my_repos/slg-bash-toolkit/config
+#
+# The lines above are an example of how I install my personal toolkit in my machine.
+# I reach out for my scripts with 's <tab>' or the more explicit 'slg <tab>' keystrokes.
+# slg is the name I choose for my main repo of utils simply because SLG are my initials.
+#
+# The folder ~/my_repos/slg-bash-toolkit/ is where all my slg-* utility scripts live:
+#
+#   slg-start-all-services
+#   slg-stop-all-services
+#
+# The folder ~/my_repos/slg-bash-toolkit/autocomplete is where autocomplete helpers live:
+#
+#   autocomplete/start-all-services_1  # provides options for the first positional argument
+#   autocomplete/start-all-services_2  # provides options for the second positional argument
+#   autocomplete/start-all-services_flags  # provides flags and available named arguments as options
+#   autocomplete/start-all-services_container # provides options I can use with a named argument.
+#                                             # In this case it will offer container names when I type
+#                                             #     slg start-all-services --container=<tab>
+#
+# I also have other toolkits grouping utils for specific projects I work on:  'cn <tab>' 
+#
+#   # cn-toolkit
+#   source ~/bash-toolkit/toolkit/bootstrap ~/my_repos/cuadernube-bash-toolkit/config
+#

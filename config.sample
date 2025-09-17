@@ -1,0 +1,29 @@
+# A single word that refers to this toolkit, must be unique
+# among all toolkits installed.
+# Works as a namespace for the configurations relative to
+# this config file.
+TOOLKIT_UNIQUE_SLUG="slg"
+
+# CLI commands that will run scripts from this toolkit.
+# (like, for example, git runs commands from git-*)
+TOOLKIT_ENTRY_POINT="slg"
+TOOLKIT_ENTRY_POINT_2="s"  # we can have a shorter alias
+
+# Folder containing scripts for this toolkit
+# (default: dynamically detected)
+#
+# SCRIPTS_DIR=/home/sebas/doc/prj/slg-toolkit/bin
+
+# Prefix of scripts in this toolkit
+# (IE: slg- for slg-run-this)  Default: my-
+#
+# TOOLKIT_PREFIX="end2end-"
+TOOLKIT_PREFIX="slg-"
+
+# Name of the environment variable that points to the scripts folder
+# (default: MY_SCRIPTS)
+ENV_VAR_NAME_SCRIPTS="SLG_SCRIPTS"
+
+# What subcommands should we call as scripts
+# instead of sourcing them?
+SUBCALL_FOR=("build-project1", "build-project2")
