@@ -67,5 +67,6 @@ EOL
 
 fi
 
+cd ~
 echo "Done."
 echo "Please restart your terminal or run 'source ~/.zshrc' to apply the changes."
