@@ -44,6 +44,7 @@ You can run this:
 
 ```
 kt create-command-flags-autocomplete create-command
+kt create-command-flags-autocomplete create-command --edit   # will open the file it just created
 ```
 
 It will create a file `bin/autocomplete/create-command_flags` that will provide autocompletion for the flags of the `create-command` command simply by running:
@@ -51,6 +52,17 @@ It will create a file `bin/autocomplete/create-command_flags` that will provide 
 ```
 kt create-command ---flags
 ```
+
+
+Another example: 
+
+```
+k create-command-flags-autocomplete create-command-flags-autocomplete
+k create-command-flags-autocomplete create-command-flags-autocomplete --edit   # will open the file it just created
+```
+
+Will do the same for the create-command-flags-autocomplete command itself, adding autocomplete for --force at al.
+
 
 
 
