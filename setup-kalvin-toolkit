@@ -70,3 +70,5 @@ fi
 cd ~
 echo "Done."
 echo "Please restart your terminal or run 'source ~/.zshrc' to apply the changes."
+echo ""
+echo "You can also read what-to-do-next.md to create your first commands."
