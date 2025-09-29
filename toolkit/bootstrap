@@ -150,7 +150,7 @@ _bash_toolkit_autocomplete() {
 FUNCTION="
 _${TOOLKIT_UNIQUE_SLUG}_autocomplete() {
   SLUG="$TOOLKIT_UNIQUE_SLUG"
-  _bash_toolkit_autocomplete"\$@"
+  _bash_toolkit_autocomplete "\$@"
 }"
 
 eval $FUNCTION
