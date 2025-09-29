@@ -78,7 +78,7 @@ _bash_toolkit_process_options() {
     compgen -W "${matches[*]}" -- "$cur"
 }
 
-_bash_toolkit_autocomplete_actual() {
+_bash_toolkit_autocomplete() {
   ( echo "===" >> /tmp/slg_autocomplete.log ) 2> /dev/null
   ( echo "$@" >> /tmp/slg_autocomplete.log ) 2> /dev/null
 
@@ -150,7 +150,7 @@ _bash_toolkit_autocomplete_actual() {
 FUNCTION="
 _${TOOLKIT_UNIQUE_SLUG}_autocomplete() {
   SLUG="$TOOLKIT_UNIQUE_SLUG"
-  _bash_toolkit_autocomplete_actual "\$@"
+  _bash_toolkit_autocomplete"\$@"
 }"
 
 eval $FUNCTION

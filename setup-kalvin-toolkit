@@ -14,7 +14,7 @@ for file in my-*; do
 done
 
 # copy autocompletion sample scripts
-cp ~/bash-toolkit/bin/autocomplete/* ~/kalvin-toolkit/bin/autocomplete
+cp -r ~/bash-toolkit/bin/autocomplete/* ~/kalvin-toolkit/bin/autocomplete
 
 if [ ! -f ~/kalvin-toolkit/bin/config ]; then
 
