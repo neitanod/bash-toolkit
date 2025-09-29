@@ -1,0 +1,21 @@
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+cd $SCRIPT_DIR
+
+while [ ! -f "./config" ]; do
+    cd ..
+    if [ "$(pwd)" == "/" ]; then
+      echo "Error: Not in a toolkit folder (config file not found)"
+      exit 1;
+    fi
+done
+source ./config 2> /dev/null
+
+PREFIX=${TOOLKIT_PREFIX:-"my-"}
+
+FILES=$(ls ${PREFIX}* 2> /dev/null)
+
+for file in ${FILES}; do
+  # Use sed to remove the TOOLKIT_PREFIX: 'my-' (or the one configured in config)
+    echo "$file" | sed "s/^${PREFIX}//"
+done
