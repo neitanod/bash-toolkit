@@ -40,6 +40,27 @@ source "${SCRIPTS_DIR}/config"
 #
 # exit 0
 
+get_first_non_option_arg() {
+    for arg in "$@"; do
+        if [[ $arg != --* && $arg != -* ]]; then
+            echo "$arg"
+            return
+        fi
+    done
+}
+
+get_second_non_option_arg() {
+    local count=0
+    for arg in "$@"; do
+        if [[ $arg != --* && $arg != -* ]]; then
+            ((count++))
+            if [[ $count -eq 2 ]]; then
+                echo "$arg"
+                return
+            fi
+        fi
+    done
+}
 
 # New array to store arguments without ---edit
 args=()
@@ -48,6 +69,12 @@ args=()
 for arg in "$@"; do
   if [[ "$arg" == "---edit" ]]; then
     vim "./${TOOLKIT_PREFIX}${args[0]}"
+    exit 0
+  elif [[ "$arg" == "---autocomplete" ]]; then
+    first_arg=$(get_second_non_option_arg "$@")
+    touch "./autocomplete/${args[0]}_${first_arg}"
+    chmod 775 "./autocomplete/${args[0]}_${first_arg}"
+    vim "./autocomplete/${args[0]}_${first_arg}"
     exit 0
   elif [[ "$arg" == "---cat" ]]; then
     cat "./${TOOLKIT_PREFIX}${args[0]}"

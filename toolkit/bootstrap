@@ -1,11 +1,11 @@
 #!/bin/bash
-_slg_is_sourced() {
+_bash_toolkit_is_sourced() {
   # Comprueba si el script está siendo ejecutado en el contexto de la shell actual (sourced)
 	# o si está siendo ejecutado en una subshell (indirectamente a través de una subllamada)
 	[[ "${BASH_SOURCE[0]}" != "${0}" ]]
 }
 
-if ! _slg_is_sourced; then
+if ! _bash_toolkit_is_sourced; then
 	cd "$(dirname "$0")"
 	source ./lib/colors.sh
 	cat <<EOF
@@ -44,7 +44,7 @@ SETVAR="export _${TOOLKIT_UNIQUE_SLUG}__TOOLKIT_PREFIX=\"${TOOLKIT_PREFIX}\""; e
 
 cd $curdir
 
-_slg_count_positional_args() {
+_bash_toolkit_count_positional_args() {
   local count=0
   for arg in "${COMP_WORDS[@]:1}"; do
     if [[ ! "$arg" =~ ^- ]]; then
@@ -55,7 +55,7 @@ _slg_count_positional_args() {
   echo "$count"
 }
 
-_slg_process_options() {
+_bash_toolkit_process_options() {
     local cur="${COMP_WORDS[COMP_CWORD]}"  # Lo que está escribiendo el usuario
     local opts
     local matches=()
@@ -78,9 +78,9 @@ _slg_process_options() {
     compgen -W "${matches[*]}" -- "$cur"
 }
 
-_slg_autocomplete_actual() {
-  echo "===" >> /tmp/slg_autocomplete.log
-  echo "$@" >> /tmp/slg_autocomplete.log
+_bash_toolkit_autocomplete_actual() {
+  ( echo "===" >> /tmp/slg_autocomplete.log ) 2> /dev/null
+  ( echo "$@" >> /tmp/slg_autocomplete.log ) 2> /dev/null
 
 	SETVAR="SCRIPTS_DIR=\${_${SLUG}__SCRIPTS_DIR}"; eval "$SETVAR"
   SETVAR="TOOLKIT_PREFIX=\${_${SLUG}__TOOLKIT_PREFIX}"; eval "$SETVAR"
@@ -102,17 +102,17 @@ _slg_autocomplete_actual() {
 	local cmd="${COMP_WORDS[1]}"
 	local position="${COMP_CWORD}"
 
-  echo "cur: $cur" >> /tmp/slg_autocomplete.log
-  echo "prev: $prev" >> /tmp/slg_autocomplete.log
-  echo "cmd: $cmd" >> /tmp/slg_autocomplete.log
-  #echo "postion: $position" >> /tmp/slg_autocomplete.log
-  echo "COMP_WORDS: ${CMP_WORDS}" >> /tmp/slg_autocomplete.log
-  #echo "Count positional args: $(_slg_count_positional_args)" >> /tmp/slg_autocomplete.log
+  ( echo "cur: $cur" >> /tmp/slg_autocomplete.log ) 2> /dev/null
+  ( echo "prev: $prev" >> /tmp/slg_autocomplete.log ) 2> /dev/null
+  ( echo "cmd: $cmd" >> /tmp/slg_autocomplete.log ) 2> /dev/null
+  # ( echo "postion: $position" >> /tmp/slg_autocomplete.log ) 2> /dev/null
+  ( echo "COMP_WORDS: ${CMP_WORDS}" >> /tmp/slg_autocomplete.log ) 2> /dev/null
+  # ( echo "Count positional args: $(_bash_toolkit_count_positional_args)" >> /tmp/slg_autocomplete.log ) 2> /dev/null
 
   if [[ "$cur" == -* && "$cur" != *=* ]]; then
     # Si existe un archivo $cmd_flags lo ejecuta para obtener una lista de available flags
     if [[ -f "${SCRIPTS_DIR}/autocomplete/${cmd}_flags" ]]; then
-      echo "${cmd}_flags" >> /tmp/slg_autocomplete.log
+      ( echo "${cmd}_flags" >> /tmp/slg_autocomplete.log ) 2> /dev/null
       "${SCRIPTS_DIR}/autocomplete/${cmd}_flags" "${COMP_WORDS[@]:1}"
     fi
   elif [[ "$cur" =~ ^-([a-zA-Z0-9_-]+)= ]]; then
@@ -123,13 +123,13 @@ _slg_autocomplete_actual() {
     # command '--configuration'=<tab>, busca command_configuration que tiene que devolver los valores que
     # puede recibir
     if [[ -f "${SCRIPTS_DIR}/autocomplete/${cmd}_${flag}" ]]; then
-      echo "${SCRIPTS_DIR}/autocomplete/${cmd}_${flag}" "${COMP_WORDS[@]:1}" >> /tmp/slg_autocomplete.log
+      ( echo "${SCRIPTS_DIR}/autocomplete/${cmd}_${flag}" "${COMP_WORDS[@]:1}" >> /tmp/slg_autocomplete.log ) 2> /dev/null
       "${SCRIPTS_DIR}/autocomplete/${cmd}_${flag}" "${COMP_WORDS[@]:1}" | while IFS= read -r line; do
         echo "${cur}$line"
       done
     fi
   else
-    local base_position=$(_slg_count_positional_args)
+    local base_position=$(_bash_toolkit_count_positional_args)
     if [[ -f "${SCRIPTS_DIR}/autocomplete/${cmd}_${base_position}" ]]; then
       "${SCRIPTS_DIR}/autocomplete/${cmd}_${base_position}" "${COMP_WORDS[@]:1}"
     elif [[ -f "${SCRIPTS_DIR}/autocomplete/${cmd}" ]]; then
@@ -150,7 +150,7 @@ _slg_autocomplete_actual() {
 FUNCTION="
 _${TOOLKIT_UNIQUE_SLUG}_autocomplete() {
   SLUG="$TOOLKIT_UNIQUE_SLUG"
-  _slg_autocomplete_actual "\$@"
+  _bash_toolkit_autocomplete_actual "\$@"
 }"
 
 eval $FUNCTION

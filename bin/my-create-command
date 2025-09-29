@@ -1,0 +1,170 @@
+#!/bin/bash
+# Detectar el directorio del script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+
+# Cargar la librería procesadora de argumentos:
+source "$SCRIPT_DIR/toolkit/lib/parse-args"
+
+source "$SCRIPT_DIR/config" 2> /dev/null
+
+CALLER="${TOOLKIT_ENTRY_POINT:-my}"
+
+#prepare_help $(cat <<'EOF'
+HELP_TEXT="$(cat <<EOF
+Crea un nuevo comando para ser ejecutado con:  $CALLER <comand-name>
+
+Se requiere para ello definir la firma del comando, que es una lista de argumentos separados por espacios.
+
+Ejemplo:
+
+    $CALLER create-command command-name --signature="positional_arg_name optional_positional_arg_name=default1 --flag1|-f --flag2|-g --optional|-o=default --another-optional|-a=default --required3|-c="
+EOF
+)"
+
+prepare_help $HELP_TEXT
+
+prepare_arg "--signature" "-s" "Command signature.  Required."
+prepare_arg "--force" "-f" "Overwrite script if already exists.  USE WITH CAUTION."
+prepare_arg "--edit" "-e" "Edit script afterwards."
+
+parse_args "$@"
+
+show_help_and_exit_if_requested  "create-command <command-name> <options>"
+
+
+SCRIPTS_FOLDER=$SCRIPT_DIR
+SCRIPTS_PREFIX="${TOOLKIT_PREFIX:-my-}"
+
+COMMAND_NAME=$(get_arg 1 "")
+SIGNATURE=$(get_arg "--signature" "")
+FORCE=$(get_arg "--force" "")
+EDIT=$(get_arg "--edit" "")
+
+ERROR=0
+
+if [[ -z "$COMMAND_NAME" ]] ; then
+  echo "Argument command_name is required" >&2
+  ERROR=1
+fi
+if [[ -z "$SIGNATURE" ]] ; then
+  echo "Argument --signature is required" >&2
+  ERROR=1
+fi
+
+if [[ $ERROR -ne 0 ]]; then
+    show_help "create-command <command-name> <options>"
+    exit 1
+fi
+
+set -e
+
+SCRIPT_PATH="$SCRIPTS_FOLDER/$SCRIPTS_PREFIX$COMMAND_NAME"
+
+if [[ -z "$FORCE" && -e "$SCRIPT_PATH" ]]; then
+    echo "Error: el script $SCRIPT_PATH ya existe." >&2
+    exit 1
+fi
+
+mkdir -p "$SCRIPTS_FOLDER"
+
+# Arrays temporales
+declare -a PREPARES
+declare -a ASSIGNS
+declare -a CHECKS
+declare -a FLAGS
+HELP_SIG=""
+POS_INDEX=1
+POS_ASSIGN=""
+POS_CHECK=""
+
+for token in $SIGNATURE; do
+    if [[ "$token" != --* ]]; then
+        name="${token%%=*}"
+        default="${token#*=}"
+        if [[ "$name" == "$default" ]]; then
+            # Obligatorio
+            ASSIGNS+=("$name=\$(get_arg $POS_INDEX \"\")")
+            CHECKS+=("if [[ -z \"\$$name\" ]] ; then echo \"Argument $name is required\" >&2 ; ERROR=1 ; fi")
+            HELP_SIG+="<$name> "
+        else
+            ASSIGNS+=("$name=\$(get_arg $POS_INDEX \"$default\")")
+            HELP_SIG+="[<$name>] "
+        fi
+        POS_INDEX=$((POS_INDEX + 1))
+    else
+        long="${token%%=*}"
+        rest="${token#*=}"
+        short=$(echo "$long" | cut -d'|' -f2)
+        long=$(echo "$long" | cut -d'|' -f1)
+
+        if [[ "$rest" == "$token" ]]; then
+            # flag
+            PREPARES+=("prepare_boolean_arg \"$long\" \"$short\" \"$long description\"")
+            FLAGS+=("if eval_arg \"$long\"; then echo \"$long receved\"; fi")
+            HELP_SIG+="$long "
+        elif [[ -z "$rest" ]]; then
+            # requerido
+            var="${long/--/}"
+            PREPARES+=("prepare_arg \"$long\" \"$short\" \"$var description.  Required.\"")
+            ASSIGNS+=("$var=\$(get_arg \"$long\" \"\")")
+            CHECKS+=("if [[ -z \"\$$var\" ]] ; then echo \"Argument $long is required\" >&2 ; ERROR=1 ; fi")
+            HELP_SIG+="$long=<value> "
+        else
+            # opcional
+            var="${long/--/}"
+            PREPARES+=("prepare_arg \"$long\" \"$short\" \"$var description.  Default=$rest\"")
+            ASSIGNS+=("$var=\$(get_arg \"$long\" \"$rest\")")
+            HELP_SIG+="[$long] "
+        fi
+    fi
+done
+
+{
+    echo "#!/bin/bash"
+    echo 'SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"'
+    echo 'source "$SCRIPT_DIR/toolkit/lib/parse-args"'
+    echo ""
+
+    for line in "${PREPARES[@]}"; do echo "$line"; done
+
+    echo ""
+    echo 'parse_args "$@"'
+    echo ""
+    echo "show_help_and_exit_if_requested  \"$COMMAND_NAME $HELP_SIG\""
+    echo ""
+
+    for line in "${ASSIGNS[@]}"; do echo "$line"; done
+    echo ""
+
+    echo 'ERROR=0'
+
+    for line in "${CHECKS[@]}"; do echo "$line"; done
+    echo ""
+    echo "if [[ \$ERROR -ne 0 ]]; then"
+    echo "    show_help \"$COMMAND_NAME $HELP_SIG\""
+    echo "    exit 1"
+    echo "fi"
+    echo ""
+
+    echo "# Imprimimos todo lo que recibimos, como ejemplo de uso:"
+    echo "echo 'Running path: ' \"\$(pwd)\""
+    echo "echo 'Script path:  ' \"\$SCRIPT_DIR\""
+    echo "echo Received arguments:"
+    for line in "${ASSIGNS[@]}"; do
+        varname=$(echo "$line" | cut -d= -f1)
+        echo "echo \"   $varname: \"\$$varname\"\""
+    done
+    echo
+    for line in "${FLAGS[@]}"; do echo "$line"; done
+
+} > "$SCRIPT_PATH"
+
+chmod +x "$SCRIPT_PATH"
+echo "Comando creado en: $SCRIPT_PATH"
+echo
+
+if eval_arg "--edit"; then
+  $CALLER $COMMAND_NAME ---edit;
+else
+  echo "Use $CALLER $COMMAND_NAME ---edit para editar el script."
+fi

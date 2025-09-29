@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+echo "Setting up Kalvin's bash toolkit."
+
+cd ~
+git clone git@github.com:neitanod/bash-toolkit.git 2>/dev/null
+mkdir -p ~/kalvin-toolkit/bin/autocomplete
+cp ~/bash-toolkit/config.sample ~/kalvin-toolkit/bin/
+
+# copy sample scripts and rename them from my-* to kt-*
+cp ~/bash-toolkit/bin/my-* ~/kalvin-toolkit/bin/
+cd ~/kalvin-toolkit/bin
+for file in my-*; do
+  mv "$file" "${file/my-/kt-}"
+done
+
+# copy autocompletion sample scripts
+cp ~/bash-toolkit/bin/autocomplete/* ~/kalvin-toolkit/bin/autocomplete
+
+if [ ! -f ~/kalvin-toolkit/bin/config ]; then
+
+echo "" >> ~/.zshrc
+
+echo "# Prepare zsh complete function for easy autocompletion" >> ~/.zshrc
+echo "source ~/bash-toolkit/toolkit/lib/zsh-complete-function.sh" >> ~/.zshrc
+
+echo "# kalvin-toolkit" >> ~/.zshrc
+echo "export PATH=\$PATH:\$HOME/kalvin-toolkit/bin" >> ~/.zshrc
+echo "source ~/bash-toolkit/toolkit/bootstrap ~/kalvin-toolkit/bin/config" >> ~/.zshrc
+echo "" >> ~/.zshrc
+
+# Now edit config.sample to look like this:
+# (you would normally do this in a text editor, but for the sake of completeness, 
+# let's just overwrite the file here)
+
+cat <<EOL > ~/kalvin-toolkit/bin/config
+
+# A single word that refers to this toolkit, must be unique
+# among all toolkits installed.
+# Works as a namespace for the configurations relative to
+# this config file.
+TOOLKIT_UNIQUE_SLUG="kalvin"
+
+# CLI commands that will run scripts from this toolkit.
+# (like, for example, git runs commands from git-*)
+TOOLKIT_ENTRY_POINT="kt"
+TOOLKIT_ENTRY_POINT_2="k"  # we can have a shorter alias
+
+# Folder containing scripts for this toolkit
+# (default: dynamically detected)
+#
+# SCRIPTS_DIR=/home/kalvin-toolkit/bin
+
+# Prefix of scripts in this toolkit
+# (IE: kt- for kt-run-this)  Default: my-
+#
+TOOLKIT_PREFIX="kt-"
+
+# Name of the environment variable that points to the scripts folder
+# (default: MY_SCRIPTS)
+ENV_VAR_NAME_SCRIPTS="KT_SCRIPTS"
+
+# What subcommands should we call as scripts
+# instead of sourcing them?  (ignore this)
+SUBCALL_FOR=("build-project1", "build-project2")
+
+EOL
+
+fi
+
+echo "Done."
+echo "Please restart your terminal or run 'source ~/.zshrc' to apply the changes."

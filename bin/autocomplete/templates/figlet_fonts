@@ -1,0 +1,3 @@
+#!/bin/bash
+for file in /usr/share/figlet/*.flf; do basename "$file" .flf; done
+ls ~/figlet-fonts/*

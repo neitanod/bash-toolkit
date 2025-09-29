@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <container_name>"
+    echo "Available containers:"
+    sudo docker ps --format "table {{.ID}}\t{{.Names}}"
+    exit 1
+fi
+
+sudo docker exec -it $1 bash

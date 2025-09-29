@@ -1,0 +1,27 @@
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+source "$SCRIPT_DIR/config" 2> /dev/null
+source "$SCRIPT_DIR/toolkit/lib/parse-args"
+
+# if TOOLKIT_PREFIX was not loaded from config, set it to "my-"
+TOOLKIT_PREFIX="${TOOLKIT_PREFIX:-my-}"
+
+parse_args "$@"
+
+show_help_and_exit_if_requested  "append-to-command <command_name> <line_of_code> "
+
+command_name=$(get_arg 1 "")
+line_of_code=$(get_arg 2 "")
+
+ERROR=0
+if [[ -z "$command_name" ]] ; then echo "Argument command_name is required" >&2 ; ERROR=1 ; fi
+if [[ -z "$line_of_code" ]] ; then echo "Argument line_of_code is required" >&2 ; ERROR=1 ; fi
+
+if [[ $ERROR -ne 0 ]]; then
+    show_help "append-to-command <command_name> <line_of_code> "
+    exit 1
+fi
+
+command_name="${TOOLKIT_PREFIX}${command_name}"
+
+echo "${line_of_code}" >> "$SCRIPT_DIR/$command_name"

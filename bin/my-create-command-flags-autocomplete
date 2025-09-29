@@ -1,0 +1,44 @@
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+source "$SCRIPT_DIR/toolkit/lib/parse-args"
+
+source "$SCRIPT_DIR/config" 2> /dev/null
+
+CALLER="${TOOLKIT_ENTRY_POINT:-my}"
+
+prepare_boolean_arg "--edit" "-e" "Edit the generated command."
+prepare_boolean_arg "--force" "-f" "Overwrite existing.  USE WITH CAUTION."
+
+parse_args "$@"
+
+show_help_and_exit_if_requested  "$CALLER create-command-flags-autocomplete <command_name> [--edit] [--force]"
+
+command_name=$(get_arg 1 "")
+
+ERROR=0
+
+if [[ -z "$command_name" ]] ; then echo "Argument command_name is required" >&2 ; ERROR=1 ; fi
+
+if [[ $ERROR -ne 0 ]]; then
+    show_help "$CALLER create-command-flags-autocomplete <command_name> [--edit] [--force]"
+    exit 1
+fi
+
+SCRIPT_PATH="$SCRIPT_DIR/autocomplete/${command_name}_flags"
+
+# check if file ${SCRIPT_DIR}/autocomplete/${command_name}_flags exists
+if ! eval_arg "--force"; then
+  if [[ -e "$SCRIPT_PATH" ]]; then
+    echo "Autocomplete script already exists.";
+    echo "Use --force to overwrite.";
+    echo "USE WITH CAUTION.";
+    exit 1
+  fi
+fi
+
+echo "$CALLER ${command_name} ---flags" > "$SCRIPT_PATH"
+chmod 775 "$SCRIPT_PATH"
+
+if eval_arg "--edit"; then
+  vim "$SCRIPT_PATH"
+fi

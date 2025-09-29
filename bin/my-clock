@@ -1,0 +1,10 @@
+# watch -n 1 -t "date +'%Y-%m-%d %H:%M:%S' | figlet -f future"
+# watch -n 1 -t "echo && echo && date +'    %H:%M:%S' | figlet -f future"
+
+if ! command -v figlet &> /dev/null
+then
+    echo "figlet is required but not installed. Please install figlet to use this command."
+    exit 1
+fi
+
+watch -n 1 -t "date +'%H:%M:%S' | figlet -f future"
